@@ -1,0 +1,84 @@
+# Production-ready Helm values example
+# Use with: helm install my-lb ./chart --values examples/production-values.yaml
+
+# Multiple replicas for high availability
+replicaCount: 2
+
+# Pod discovery configuration
+env:
+  # Use multiple labels for more specific selection
+  relay: "app=backend,tier=production,version=v1"
+
+  # Reasonable update interval for production
+  updateinterval: "10s"
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3333
+
+# Production resource limits
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+# Security context (already enabled by default, shown here for reference)
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65534
+  fsGroup: 65534
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 65534
+
+# Pod anti-affinity to spread replicas across nodes
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app
+            operator: In
+            values:
+            - k8s-internal-loadbalancer
+        topologyKey: kubernetes.io/hostname
+
+# Node selector for dedicated nodes (optional)
+# nodeSelector:
+#   workload: loadbalancer
+
+# Tolerations for dedicated nodes (optional)
+# tolerations:
+# - key: "dedicated"
+#   operator: "Equal"
+#   value: "loadbalancer"
+#   effect: "NoSchedule"
+
+# Pod labels for monitoring
+podLabels:
+  environment: production
+  team: platform
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+# Enable metrics
+metrics:
+  enabled: "true"

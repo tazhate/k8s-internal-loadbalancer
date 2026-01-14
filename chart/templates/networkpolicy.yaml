@@ -1,0 +1,91 @@
+{{- if .Values.networkPolicy.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "k8s-internal-loadbalancer.fullname" . }}
+  labels:
+    {{- include "k8s-internal-loadbalancer.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "k8s-internal-loadbalancer.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  - Egress
+
+  ingress:
+  # Allow traffic to the main service port
+  - from:
+    {{- if .Values.networkPolicy.ingress.from }}
+    {{- toYaml .Values.networkPolicy.ingress.from | nindent 4 }}
+    {{- else }}
+    - podSelector: {}
+    {{- end }}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+
+  # Allow traffic to health check port
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 8081
+
+  # Allow traffic to metrics port
+  {{- if .Values.metrics.enabled }}
+  - from:
+    {{- if .Values.networkPolicy.metrics.from }}
+    {{- toYaml .Values.networkPolicy.metrics.from | nindent 4 }}
+    {{- else }}
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    {{- end }}
+    ports:
+    - protocol: TCP
+      port: 9090
+  {{- end }}
+
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+
+  # Allow Kubernetes API access
+  - to:
+    - namespaceSelector: {}
+      podSelector:
+        matchLabels:
+          component: apiserver
+    ports:
+    - protocol: TCP
+      port: 443
+
+  # Allow access to Traefik API (localhost only)
+  - to:
+    - podSelector:
+        matchLabels:
+          {{- include "k8s-internal-loadbalancer.selectorLabels" . | nindent 10 }}
+    ports:
+    - protocol: TCP
+      port: 8080
+
+  # Allow access to backend pods
+  - to:
+    {{- if .Values.networkPolicy.egress.to }}
+    {{- toYaml .Values.networkPolicy.egress.to | nindent 4 }}
+    {{- else }}
+    - podSelector: {}
+    {{- end }}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.env.backendPort | default 3333 }}
+{{- end }}

@@ -1,0 +1,43 @@
+# Dockerfile
+
+# Use Alpine Linux as the base image
+FROM alpine:3.20.3
+
+# Set Traefik version
+ENV TRAEFIK_VERSION=v3.1.4
+
+# Install necessary packages, including Tini
+RUN apk add --no-cache ca-certificates curl tini
+
+# Create a non-root user and group for Traefik
+RUN addgroup -S traefik && adduser -S -G traefik traefik
+
+# Create necessary directories and set permissions
+RUN mkdir -p /etc/traefik /var/log/traefik
+RUN chown -R traefik:traefik /etc/traefik /var/log/traefik
+
+# Set the working directory
+WORKDIR /etc/traefik
+
+# Download and install Traefik as root user
+RUN curl -L https://github.com/traefik/traefik/releases/download/${TRAEFIK_VERSION}/traefik_${TRAEFIK_VERSION}_linux_amd64.tar.gz \
+    -o traefik.tar.gz && \
+    tar -xzf traefik.tar.gz traefik && \
+    mv traefik /usr/local/bin/traefik && \
+    rm traefik.tar.gz
+
+# Copy Traefik configuration files
+COPY traefik.yml /etc/traefik/traefik.yml
+
+# Change ownership of configuration files
+RUN chown -R traefik:traefik /etc/traefik
+
+# Expose necessary ports
+EXPOSE 3333 8080
+
+# Switch to the Traefik user
+USER traefik
+
+# Set the entrypoint to Tini and the command to run Traefik
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/traefik"]
+CMD ["--configFile=/etc/traefik/traefik.yml"]

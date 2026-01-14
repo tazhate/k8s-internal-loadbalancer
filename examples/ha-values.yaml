@@ -1,0 +1,67 @@
+# High Availability configuration
+# Use with: helm install my-lb ./chart --values examples/ha-values.yaml
+
+# Start with 3 replicas
+replicaCount: 3
+
+# Pod discovery
+env:
+  relay: "app=critical-service"
+  updateinterval: "5s"
+
+service:
+  type: ClusterIP
+  port: 3333
+
+# Conservative resource allocation
+resources:
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+  requests:
+    cpu: 500m
+    memory: 512Mi
+
+# Enable autoscaling
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  # targetMemoryUtilizationPercentage: 80
+
+# Hard anti-affinity - ensures replicas are on different nodes
+affinity:
+  podAntiAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+    - labelSelector:
+        matchExpressions:
+        - key: app
+          operator: In
+          values:
+          - k8s-internal-loadbalancer
+      topologyKey: kubernetes.io/hostname
+
+# Spread across availability zones if available
+#   podAntiAffinity:
+#     preferredDuringSchedulingIgnoredDuringExecution:
+#     - weight: 100
+#       podAffinityTerm:
+#         labelSelector:
+#           matchExpressions:
+#           - key: app
+#             operator: In
+#             values:
+#             - k8s-internal-loadbalancer
+#         topologyKey: topology.kubernetes.io/zone
+
+podLabels:
+  criticality: high
+  environment: production
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+
+metrics:
+  enabled: "true"

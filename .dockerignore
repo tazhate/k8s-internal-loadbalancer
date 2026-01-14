@@ -1,0 +1,56 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+CONTRIBUTING.md
+CODE_OF_CONDUCT.md
+CHANGELOG.md
+LICENSE
+docs/
+
+# CI/CD
+.github/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test files
+*_test.go
+testdata/
+
+# Build artifacts
+dist/
+build/
+bin/
+
+# Logs
+*.log
+
+# Environment files
+.env
+.env.local
+
+# Helm charts (not needed in app container)
+chart/
+
+# Examples
+examples/
+
+# Development tools
+Makefile
+.golangci.yml
+
+# Foundry/Anvil
+anvil
+cast
+chisel
+forge
+foundry_*.tar.gz

@@ -1,0 +1,52 @@
+entryPoints:
+  tcp:
+    address: ":3333"
+    transport:
+      lifeCycle:
+        # Adjust keep-alive settings to handle more connections
+        requestAcceptGraceTimeout: 0
+        graceTimeOut: 0
+      respondingTimeouts:
+        idleTimeout: 3600s  # Increase idle timeout to 1 hour
+  traefik:
+    address: ":8080"
+
+api:
+  dashboard: true
+  # SECURITY WARNING: insecure mode is disabled by default
+  # For development only, you can enable with: insecure: true
+  # For production, use proper authentication and TLS
+  insecure: false
+  debug: false
+
+providers:
+  rest:
+    # SECURITY WARNING: REST API without authentication
+    # This should only be accessible from localhost or secured network
+    # In production, implement proper authentication middleware
+    insecure: true
+
+metrics:
+  prometheus:
+    entryPoint: traefik
+    addEntryPointsLabels: true
+    addRoutersLabels: true
+    addServicesLabels: true
+
+serversTransport:
+  maxIdleConnsPerHost: 100000  # Allow up to 100,000 idle connections
+  forwardingTimeouts:
+    dialTimeout: 30s
+    idleConnTimeout: 3600s  # Corrected field name
+
+log:
+  level: INFO
+  format: json
+
+accessLog:
+  format: json
+  bufferingSize: 0
+  fields:
+    defaultMode: keep
+    headers:
+      defaultMode: keep

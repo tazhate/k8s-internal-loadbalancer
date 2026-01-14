@@ -1,0 +1,28 @@
+# Basic Helm values example
+# Use with: helm install my-lb ./chart --values examples/basic-values.yaml
+
+# Configure which pods to discover and load balance
+env:
+  # Label selector for target pods
+  relay: "app=my-app"
+
+  # How often to check for pod changes (default: 1s, recommended: 5-10s)
+  updateinterval: "5s"
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 3333
+
+# Resource limits (recommended for production)
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Metrics enabled by default
+metrics:
+  enabled: "true"
