@@ -16,18 +16,17 @@ import (
 
 // Watcher watches for pod changes using Kubernetes watch API
 type Watcher struct {
-	clientset      *kubernetes.Clientset
+	mu             sync.RWMutex
+	lastBackends   []string
 	namespace      string
 	labelSelector  string
-	backendPort    int
+	clientset      *kubernetes.Clientset
+	backendsChan   chan []string
+	errorChan      chan error
+	stopChan       chan struct{}
 	updateInterval time.Duration
+	backendPort    int
 	useWatch       bool
-
-	mu            sync.RWMutex
-	lastBackends  []string
-	backendsChan  chan []string
-	errorChan     chan error
-	stopChan      chan struct{}
 }
 
 // New creates a new pod watcher
@@ -46,7 +45,7 @@ func New(clientset *kubernetes.Clientset, namespace, labelSelector string, backe
 }
 
 // Watch starts watching for pod changes
-func (w *Watcher) Watch(ctx context.Context) (<-chan []string, <-chan error) {
+func (w *Watcher) Watch(ctx context.Context) (backends <-chan []string, errors <-chan error) {
 	if w.useWatch {
 		go w.watchWithAPI(ctx)
 	} else {
@@ -192,7 +191,8 @@ func (w *Watcher) updateBackendList(ctx context.Context) error {
 // extractBackends extracts backend addresses from pod list
 func (w *Watcher) extractBackends(pods []corev1.Pod) []string {
 	var backends []string
-	for _, pod := range pods {
+	for i := range pods {
+		pod := &pods[i]
 		if pod.Status.Phase == corev1.PodRunning && pod.Status.PodIP != "" {
 			backend := fmt.Sprintf("%s:%d", pod.Status.PodIP, w.backendPort)
 			backends = append(backends, backend)

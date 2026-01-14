@@ -14,10 +14,10 @@ import (
 
 // Server provides health and readiness endpoints
 type Server struct {
-	port     int
-	server   *http.Server
-	checkers []interfaces.HealthChecker
 	mu       sync.RWMutex
+	checkers []interfaces.HealthChecker
+	server   *http.Server
+	port     int
 	ready    bool
 }
 
@@ -75,7 +75,7 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 // healthHandler handles liveness probes
-func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) healthHandler(w http.ResponseWriter, _ *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Liveness check: just return OK if the server is running
@@ -85,7 +85,7 @@ func (s *Server) healthHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // readyHandler handles readiness probes
@@ -99,7 +99,7 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 
 	if !ready {
 		w.WriteHeader(http.StatusServiceUnavailable)
-		json.NewEncoder(w).Encode(map[string]string{
+		_ = json.NewEncoder(w).Encode(map[string]string{
 			"status": "not_ready",
 			"reason": "application not initialized",
 		})
@@ -134,11 +134,11 @@ func (s *Server) readyHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // metricsHandler provides basic metrics
-func (s *Server) metricsHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) metricsHandler(w http.ResponseWriter, _ *http.Request) {
 	s.mu.RLock()
 	checkers := s.checkers
 	ready := s.ready
@@ -147,13 +147,13 @@ func (s *Server) metricsHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	metrics := map[string]interface{}{
-		"ready":           ready,
-		"checkers_count":  len(checkers),
-		"uptime_seconds":  time.Now().Unix(), // simplified
+		"ready":          ready,
+		"checkers_count": len(checkers),
+		"uptime_seconds": time.Now().Unix(), // simplified
 	}
 
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(metrics)
+	_ = json.NewEncoder(w).Encode(metrics)
 }
 
 // KubernetesHealthChecker checks Kubernetes API connectivity

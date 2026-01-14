@@ -15,54 +15,60 @@ type Config struct {
 	PodNamespace string
 
 	// Traefik configuration
-	TraefikAPIURL    string
-	BackendPort      int
+	TraefikAPIURL      string
 	LoadBalancerMethod string
-	RouterName       string
-	ServiceName      string
-
-	// Update configuration
-	UpdateInterval time.Duration
-	UseWatch       bool // Use Kubernetes watch API instead of polling
+	RouterName         string
+	ServiceName        string
 
 	// Health check configuration
-	HealthCheckPort int
 	HealthCheckPath string
 
-	// Circuit breaker configuration
-	CBMaxRequests      uint32
-	CBInterval         time.Duration
-	CBTimeout          time.Duration
-	CBConsecutiveFailures uint32
-
 	// Logging
-	LogLevel string
+	LogLevel  string
 	LogFormat string // json or text
 
 	// Version information
 	Version   string
 	BuildTime string
 	VCSRef    string
+
+	// Update configuration
+	UpdateInterval time.Duration
+
+	// Circuit breaker configuration
+	CBInterval time.Duration
+	CBTimeout  time.Duration
+
+	// Traefik and health check ports
+	BackendPort     int
+	HealthCheckPort int
+
+	// Circuit breaker thresholds
+	CBMaxRequests         uint32
+	CBConsecutiveFailures uint32
+
+	// Update configuration
+	UseWatch bool // Use Kubernetes watch API instead of polling
 }
 
 // LoadFromEnv loads configuration from environment variables
 func LoadFromEnv() (*Config, error) {
 	cfg := &Config{
 		// Defaults
-		BackendPort:        3333,
-		LoadBalancerMethod: "leastconn",
-		RouterName:         "relay-router",
-		ServiceName:        "relay-service",
-		UpdateInterval:     time.Second,
-		UseWatch:           true,
-		HealthCheckPort:    8081,
-		HealthCheckPath:    "/health",
-		CBMaxRequests:      5,
-		CBInterval:         time.Minute,
-		CBTimeout:          30 * time.Second,
+		BackendPort:           3333,
+		LoadBalancerMethod:    "leastconn",
+		RouterName:            "relay-router",
+		ServiceName:           "relay-service",
+		UpdateInterval:        time.Second,
+		UseWatch:              true,
+		HealthCheckPort:       8081,
+		HealthCheckPath:       "/health",
+		CBMaxRequests:         5,
+		CBInterval:            time.Minute,
+		CBTimeout:             30 * time.Second,
 		CBConsecutiveFailures: 5,
-		LogLevel:           "info",
-		LogFormat:          "json",
+		LogLevel:              "info",
+		LogFormat:             "json",
 	}
 
 	// Required fields

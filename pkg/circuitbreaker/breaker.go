@@ -30,23 +30,21 @@ func (s State) String() string {
 
 // CircuitBreaker implements the circuit breaker pattern
 type CircuitBreaker struct {
-	mu sync.RWMutex
-
-	maxRequests      uint32
-	interval         time.Duration
-	timeout          time.Duration
+	mu                  sync.RWMutex
+	expiry              time.Time
+	interval            time.Duration
+	timeout             time.Duration
+	counts              *counts
+	generation          uint64
+	maxRequests         uint32
 	consecutiveFailures uint32
-
-	state            State
-	generation       uint64
-	counts           *counts
-	expiry           time.Time
+	state               State
 }
 
 type counts struct {
-	requests         uint32
-	totalSuccesses   uint32
-	totalFailures    uint32
+	requests             uint32
+	totalSuccesses       uint32
+	totalFailures        uint32
 	consecutiveSuccesses uint32
 	consecutiveFailures  uint32
 }
@@ -54,9 +52,9 @@ type counts struct {
 // New creates a new CircuitBreaker
 func New(maxRequests uint32, interval, timeout time.Duration, consecutiveFailures uint32) *CircuitBreaker {
 	cb := &CircuitBreaker{
-		maxRequests:      maxRequests,
-		interval:         interval,
-		timeout:          timeout,
+		maxRequests:         maxRequests,
+		interval:            interval,
+		timeout:             timeout,
 		consecutiveFailures: consecutiveFailures,
 	}
 	cb.toNewGeneration(time.Now())
@@ -128,7 +126,7 @@ func (cb *CircuitBreaker) afterRequest(before uint64, success bool) {
 }
 
 // currentState returns the current state without modifying it
-func (cb *CircuitBreaker) currentState(now time.Time) (State, uint64) {
+func (cb *CircuitBreaker) currentState(now time.Time) (state State, generation uint64) {
 	switch cb.state {
 	case StateClosed:
 		if !cb.expiry.IsZero() && cb.expiry.Before(now) {
@@ -204,10 +202,10 @@ func (cb *CircuitBreaker) Stats() map[string]interface{} {
 	defer cb.mu.RUnlock()
 
 	return map[string]interface{}{
-		"state":                cb.state.String(),
-		"requests":             cb.counts.requests,
-		"total_successes":      cb.counts.totalSuccesses,
-		"total_failures":       cb.counts.totalFailures,
+		"state":                 cb.state.String(),
+		"requests":              cb.counts.requests,
+		"total_successes":       cb.counts.totalSuccesses,
+		"total_failures":        cb.counts.totalFailures,
 		"consecutive_successes": cb.counts.consecutiveSuccesses,
 		"consecutive_failures":  cb.counts.consecutiveFailures,
 	}

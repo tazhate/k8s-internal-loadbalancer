@@ -20,8 +20,8 @@ type Backend struct {
 	routerName     string
 	serviceName    string
 	lbMethod       string
-	client         *http.Client
 	circuitBreaker *circuitbreaker.CircuitBreaker
+	client         *http.Client
 }
 
 // New creates a new Traefik backend manager
@@ -108,7 +108,10 @@ func (b *Backend) updateBackendsInternal(ctx context.Context, backends []string)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
-		body, _ := io.ReadAll(resp.Body)
+		body, readErr := io.ReadAll(resp.Body)
+		if readErr != nil {
+			return fmt.Errorf("unexpected status code %d (failed to read body: %v)", resp.StatusCode, readErr)
+		}
 		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}
 
@@ -121,7 +124,7 @@ func (b *Backend) updateBackendsInternal(ctx context.Context, backends []string)
 
 // HealthCheck checks if Traefik API is accessible
 func (b *Backend) HealthCheck(ctx context.Context) error {
-	req, err := http.NewRequestWithContext(ctx, "GET", b.apiURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", b.apiURL, http.NoBody)
 	if err != nil {
 		return fmt.Errorf("failed to create health check request: %w", err)
 	}

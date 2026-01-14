@@ -47,8 +47,8 @@ func main() {
 		"use_watch", cfg.UseWatch)
 
 	// Validate configuration
-	if err := cfg.Validate(); err != nil {
-		slog.Error("Invalid configuration", "error", err)
+	if validateErr := cfg.Validate(); validateErr != nil {
+		slog.Error("Invalid configuration", "error", validateErr)
 		os.Exit(1)
 	}
 
