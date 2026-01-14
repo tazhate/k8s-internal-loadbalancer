@@ -110,7 +110,7 @@ func (b *Backend) updateBackendsInternal(ctx context.Context, backends []string)
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
 		body, readErr := io.ReadAll(resp.Body)
 		if readErr != nil {
-			return fmt.Errorf("unexpected status code %d (failed to read body: %v)", resp.StatusCode, readErr)
+			return fmt.Errorf("unexpected status code %d (failed to read body: %w)", resp.StatusCode, readErr)
 		}
 		return fmt.Errorf("unexpected status code %d: %s", resp.StatusCode, string(body))
 	}

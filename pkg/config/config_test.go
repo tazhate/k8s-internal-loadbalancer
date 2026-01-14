@@ -10,7 +10,7 @@ func TestLoadFromEnv(t *testing.T) {
 	tests := []struct {
 		name    string
 		env     map[string]string
-		wantErr bool //nolint:govet // test struct
+		wantErr bool
 	}{
 		{
 			name: "valid configuration",
@@ -91,7 +91,7 @@ func TestConfigValidate(t *testing.T) {
 	tests := []struct {
 		name    string
 		cfg     *Config
-		wantErr bool //nolint:govet // test struct
+		wantErr bool
 	}{
 		{
 			name: "valid config",
