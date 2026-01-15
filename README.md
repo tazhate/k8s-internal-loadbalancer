@@ -57,6 +57,49 @@ The K8s Internal Load Balancer automatically:
 - **Prometheus Metrics**: Built-in metrics export from Traefik
 - **Production-Ready Security**: Configurable security contexts and non-root execution
 
+## When to Use This
+
+This load balancer is designed for a specific scenario that standard Kubernetes Ingress controllers don't handle well:
+
+**You need TCP load balancing for long-lived connections without modifying your existing Ingress setup.**
+
+### The Problem
+
+Standard Kubernetes Ingress is built for HTTP/HTTPS traffic at Layer 7. But many applications rely on raw TCP connections that:
+
+- Stay open for hours, days, or even weeks (database connections, message queues, game servers)
+- Use custom protocols that aren't HTTP-based (MQTT, custom binary protocols, database wire protocols)
+- Require connection-level load balancing, not request-level
+
+When you have such a service and want to add load balancing:
+- **Option A**: Modify your Ingress controller to handle TCP streams — complex, requires config changes, may affect other services
+- **Option B**: Use a dedicated TCP load balancer — this project
+
+### The Solution
+
+This project provides a **self-contained, single-service TCP load balancer** that:
+
+1. **Doesn't touch your Ingress** — runs as a separate deployment
+2. **Handles long-lived TCP connections** — uses Traefik's TCP routing with least-connections algorithm
+3. **Dynamically discovers backends** — watches Kubernetes pods in real-time via Watch API
+4. **Operates at Layer 4** — raw TCP, no protocol assumptions
+
+### Ideal Use Cases
+
+| Scenario | Why This Load Balancer |
+|----------|------------------------|
+| **Database connection pooling** | PostgreSQL/MySQL connections that stay open for connection pools |
+| **Message broker clusters** | RabbitMQ, Kafka, NATS with persistent consumer connections |
+| **Real-time services** | WebSocket backends, game servers, chat systems |
+| **IoT gateways** | MQTT brokers with thousands of long-lived device connections |
+| **Custom TCP protocols** | Proprietary protocols that Ingress can't parse |
+
+### When NOT to Use This
+
+- For HTTP/HTTPS APIs — use standard Ingress
+- When you need TLS termination with SNI routing — use Ingress with TLS
+- For services that already work with your existing load balancing setup
+
 ## Requirements
 
 - Kubernetes 1.20+
